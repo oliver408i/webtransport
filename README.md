@@ -15,3 +15,16 @@ See `client_example.py` for an example on how to use the module. It's pretty sim
 
 ## Server
 See `server_example.py` for an example on how to use the module for making a server. It works with both browsers (as long as you have valid certs) and the python client.
+
+## Features
+ - [x] Client custom stream & datagram handler (receiver)
+ - [x] Client open stream & send stream data or datagram
+ - [x] Server custom stream & datagram handler (receiver)
+ - [x] Server open stream & send stream data or datagram
+ - [x] Server supports web (JS api client)
+ - [x] Server custom handler for new incomming requests
+ - [x] Basic support for Unidirectional streams and checking for Unidirectional streams
+ - [ ] Proper support for ending stream (end_stream)
+ - [ ] Complete support for Unidirectional streams and properly handing then
+ - [ ] Server & Client custom header receiving and sending
+ - [ ] Server & Client custom (non-WebTransport) stream sending and receiving
