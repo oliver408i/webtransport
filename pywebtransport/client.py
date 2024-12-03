@@ -8,13 +8,14 @@ warnings.filterwarnings(
     message=".*naïve datetime object have been deprecated.*",
 )
 
-import asyncio
+import asyncio, logging
 import os
 from aioquic.asyncio import connect
 from aioquic.h3.connection import H3Connection
 from aioquic.h3.events import HeadersReceived, DataReceived, DatagramReceived, WebTransportStreamDataReceived
 from aioquic.quic.configuration import QuicConfiguration
 from aioquic.quic.events import StreamDataReceived
+from .utils import WebTransportError, validate_certfile, get_quic_configuration
 
 # Patch asyncio.StreamWriter.__del__ to avoid the NotImplementedError spam
 def safe_del(self):
@@ -27,10 +28,8 @@ def safe_del(self):
         pass
 asyncio.StreamWriter.__del__ = safe_del
 
-class WebTransportError(Exception):
-    """Custom exception for WebTransport-related errors."""
-    pass
-
+logger = logging.getLogger(__name__)
+logger.info("WebTransport client initialized")
 
 class WebTransportClient:
     """
@@ -45,6 +44,7 @@ class WebTransportClient:
         :param port: Port of the WebTransport server
         :param certfile: Optional path to the certificate file for secure connections
         """
+        super().__init__()
         self.host = host
         self.port = port
         self.certfile = certfile
@@ -58,16 +58,7 @@ class WebTransportClient:
         self._stream_data_handler = None
         self._wt_stream_ids = []
 
-        self._validate_certfile()
-
-    def _validate_certfile(self):
-        """
-        Validate the certificate file path if provided.
-
-        :raises WebTransportError: If the certificate file is invalid or not accessible
-        """
-        if self.certfile and not os.path.isfile(self.certfile):
-            raise WebTransportError(f"Invalid certificate file: {self.certfile}")
+        validate_certfile(self.certfile)
 
     async def connect(self):
         """
@@ -75,7 +66,7 @@ class WebTransportClient:
 
         :raises WebTransportError: If the WebTransport handshake fails
         """
-        configuration = QuicConfiguration(is_client=True, alpn_protocols=["h3"], max_datagram_frame_size=65536)
+        configuration = get_quic_configuration(is_client=True, certfile=self.certfile)
         if self.certfile:
             configuration.load_verify_locations(self.certfile)
 
@@ -86,12 +77,15 @@ class WebTransportClient:
 
         await self._send_webtransport_request()
 
+        logger.debug("WebTransport handshake completed")
+
     def _quic_event_received(self, event):
         """
         Handle QUIC events and route HTTP/3 events.
 
         :param event: A QUIC event received from the connection
         """
+        logger.debug("Received QUIC event: %s", event)
         if isinstance(event, StreamDataReceived):
             if event.stream_id in self._wt_stream_ids:
                 self._handle_stream_data_received(event.stream_id, event.data)
@@ -133,6 +127,7 @@ class WebTransportClient:
 
         :param event: HeadersReceived event
         """
+        logger.debug("Received HTTP/3 headers: %s", event)
         headers = dict(event.headers)
         if headers.get(b":status") == b"200":
             self.streamOpen = True
@@ -189,16 +184,17 @@ class WebTransportClient:
             raise WebTransportError("WebTransport session not established")
         self.http.send_datagram(stream_id, data)
 
-    def send_stream_data(self, stream_id, data):
+    def send_stream_data(self, stream_id, data, end_stream=False):
         """
         Send data over a WebTransport stream.
 
         :param data: Data to send
         :raises WebTransportError: If the WebTransport session is not established
+        :param end_stream: Boolean indicating if the stream should be closed
         """
         if self.session_id is None:
             raise WebTransportError("WebTransport stream not established")
-        self.http._quic.send_stream_data(stream_id, data, end_stream=False)
+        self.http._quic.send_stream_data(stream_id, data, end_stream=end_stream)
 
     async def _send_webtransport_request(self):
         """

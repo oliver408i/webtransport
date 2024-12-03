@@ -14,4 +14,4 @@ See `client_example.py` for an example on how to use the module. It's pretty sim
 `web.html` is a very basic implementation for web. JS already have a full API for WebTransport, see [Mozilla's docs](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport)
 
 ## Server
-Coming soon. See `server.py` for a very basic WebTransport server using `aioquic`. I aim to wrap it with my own module like the client in the future.
+See `server_example.py` for an example on how to use the module for making a server. It works with both browsers (as long as you have valid certs) and the python client.
