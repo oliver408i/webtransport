@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Webtransport test</title>
+    </head>
+    <body>
+        <p>Webtransport test (open console)</p>
+        <script>
+        async function runWebTransport(url) {
+            const transport = new WebTransport(url);
+            await transport.ready;
+            console.log("WebTransport connection established");
+
+            const stream = await transport.createBidirectionalStream();
+            const writer = stream.writable.getWriter();
+            const reader = stream.readable.getReader();
+
+            writer.write(new TextEncoder().encode("Hello, server!"));
+            console.log("Message sent");
+
+            const { value, done } = await reader.read();
+            if (!done) {
+                console.log("Received:", new TextDecoder().decode(value));
+            }
+
+            transport.close();
+            console.log("Connection closed");
+        }
+
+        runWebTransport("https://127.0.0.1:4433");
+        </script>
+    </body>
+</html>
