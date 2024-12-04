@@ -3,11 +3,12 @@ import logging
 
 from aioquic.asyncio import QuicConnectionProtocol, serve
 from aioquic.asyncio.protocol import QuicConnectionProtocol
-from aioquic.h3.connection import H3Connection
+from aioquic.h3.connection import H3Connection, StreamDataReceived
 from aioquic.h3.events import (
     HeadersReceived,
     WebTransportStreamDataReceived,
-    DatagramReceived
+    DatagramReceived,
+    
 )
 from aioquic.quic.connection import stream_is_unidirectional
 from typing import Optional
@@ -41,12 +42,16 @@ class WebTransportProtocol(QuicConnectionProtocol):
         return self._http.create_webtransport_stream(is_unidirectional)
 
     def quic_event_received(self, event: QuicEvent):
+        logger.debug("Received QUIC event: " + str(event))
 
         if isinstance(event, ProtocolNegotiated):
             logger.debug("Protocol negotiated: " + event.alpn_protocol)
             self._http = H3Connection(self._quic, enable_webtransport=True)
+        elif isinstance(event, StreamDataReceived):
+            r = self.handle_quic_stream_data_received(event.stream_id, event.data)
+            if r and r > 1: # Do not propagate data to HTTP/3
+                return
         
-        logger.debug("Received QUIC event: " + str(event))
         if self._http:
             for http_event in self._http.handle_event(event):
                 logger.debug("Received HTTP/3 event: " + str(http_event))
@@ -104,6 +109,16 @@ class WebTransportProtocol(QuicConnectionProtocol):
 
         :param headers: Headers of the connection
         """
+    
+    def handle_quic_stream_data_received(self, stream_id, data):
+        """
+        Default handler for data received on a QUIC stream.
+        Override this method to handle QUIC stream data.
+
+        :param stream_id: Stream ID where data was received
+        :param data: Data payload received
+        """
+
 
     def http_event_received(self, event):
         if isinstance(event, HeadersReceived):

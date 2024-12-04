@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+
+repositories {
+    // Specify where to fetch dependencies from
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'tech.kwik:kwik:0.8.13'
+}
+
+application {
+    mainClass = 'me.wttest.Main' // Specify the main class
+}

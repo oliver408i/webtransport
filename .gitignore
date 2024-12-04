@@ -1,3 +1,7 @@
 env/
 *.pem
 __pycache__
+.gradle
+build
+.vscode
+.DS_Store

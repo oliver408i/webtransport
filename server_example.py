@@ -7,7 +7,6 @@ class MyProtocol(WebTransportProtocol):
     # No need to override the init method, but you can if you want
 
     def handle_stream_data_received(self, stream_id, data): # Override this
-        print(f"Received data on stream {stream_id}: {data.decode()}")
         self.send_stream_data(stream_id, data) # Echo back the received data
     
     def handle_datagram_received(self, stream_id, data): # Override this
@@ -16,6 +15,18 @@ class MyProtocol(WebTransportProtocol):
     
     def handle_connection_made(self, headers):
         print(f"Connection made with headers: {headers}")
+    
+    def handle_quic_stream_data_received(self, stream_id, data): # This is for lower-level QUIC stream data
+        # Use this if you need to handle non-WebTransport stream data
+        try:
+            if data.decode("utf-8").startswith("java"): # This is custom handling for javaclient since it doesn't send over WebTransport
+                self.send_stream_data(stream_id, data) # Echo back
+                self.send_stream_data(stream_id, b"", True) # Close the stream
+                return 1 # Do not process further (i.e. propagate data to HTTP/3)
+            else:
+                return # Propagate data to HTTP/3
+        except UnicodeDecodeError:
+            pass # Ignore non-UTF-8 data (usually connection and system data)
 
     # Don't override anything else
 

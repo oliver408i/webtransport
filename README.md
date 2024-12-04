@@ -11,7 +11,8 @@ There are a few additional steps if you wish to use this in a browser. Always us
 
 ## Client
 See `client_example.py` for an example on how to use the module. It's pretty simple & straightforward, not much harder than using WebSockets.  
-`web.html` is a very basic implementation for web. JS already have a full API for WebTransport, see [Mozilla's docs](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport)
+`web.html` is a very basic implementation for web. JS already have a full API for WebTransport, see [Mozilla's docs](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport)   
+The `javaclient` folder has a basic java QUIC client made using [kwik](https://github.com/ptrd/kwik). It doesn't use the client code from this repo, it is just a demo. Note that this code doesn't use WebTransport, instead creating its custom QUIC streams. It is compatable with `server_example` but needs a few extra steps.
 
 ## Server
 See `server_example.py` for an example on how to use the module for making a server. It works with both browsers (as long as you have valid certs) and the python client.
@@ -24,7 +25,8 @@ See `server_example.py` for an example on how to use the module for making a ser
  - [x] Server supports web (JS api client)
  - [x] Server custom handler for new incomming requests
  - [x] Basic support for Unidirectional streams and checking for Unidirectional streams
+ - [x] Server support for custom (non-WebTransport) streams
  - [ ] Proper support for ending stream (end_stream)
  - [ ] Complete support for Unidirectional streams and properly handing then
  - [ ] Server & Client custom header receiving and sending
- - [ ] Server & Client custom (non-WebTransport) stream sending and receiving
+ - [ ] Client support for custom (non-WebTransport) streams
